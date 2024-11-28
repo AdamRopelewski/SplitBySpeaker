@@ -100,6 +100,7 @@ def process_files(input_folder, srt_file, diarize=False):
         ".mp4",
     ]
     output_dir = os.path.join(input_folder, "output")
+    os.makedirs(output_dir, exist_ok=True)
 
     for audio_file in os.listdir(input_folder):
         audio_file_path = os.path.join(input_folder, audio_file)
@@ -111,8 +112,14 @@ def process_files(input_folder, srt_file, diarize=False):
             wav_file_path = os.path.join(
                 input_folder, f"{os.path.splitext(audio_file)[0]}{AUDIO_EXT}"
             )
-            subprocess.run(["ffmpeg", "-i", audio_file_path, wav_file_path], check=True)
-            audio_file_path = wav_file_path
+            try:
+                subprocess.run(
+                    ["ffmpeg", "-y", "-i", audio_file_path, wav_file_path], check=True
+                )
+                audio_file_path = wav_file_path
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to convert {audio_file} to WAV\n{e.output}")
+                continue
 
         speaker_segments_dir = os.path.join(output_dir, os.path.splitext(audio_file)[0])
         os.makedirs(speaker_segments_dir, exist_ok=True)
