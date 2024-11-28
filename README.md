@@ -26,3 +26,8 @@ This tool is designed for creating fast and efficient datasets for AI training, 
 **Note**: This project is still in development and may contain unfinished features or bugs.
 
 For RVC training, we recommend using [UVR](https://github.com/Anjok07/ultimatevocalremovergui) with models like MDX-Net (model: voc_ft) to remove any unwanted sounds and enhance the quality of the audio.
+
+
+## TODO
+
+- Support multiple `.srt` files. Currently, you can input a folder containing multiple audio files, but only one `.srt` file is supported.
