@@ -3,12 +3,114 @@ import pysrt
 from pydub import AudioSegment
 import unicodedata
 import re
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import tkinter as tk
 import subprocess
 
 AUDIO_EXT = ".wav"
 FILE_COUNTER = 0
+
+
+class FileChooserApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Audio and SRT File Selection")
+        self.root.resizable(False, False)
+
+        # Display Instructions Label
+        self.instructions = tk.Label(
+            root,
+            text="Please follow the instructions:\n\n"
+            "1. Choose the folder containing your audio files.\n"
+            "2. Choose the corresponding SRT file with transcription and diarization (if available).\n"
+            "3. Decide if you'd like to use diarization for splitting the audio files by speaker\n"
+            "4. Click continue.",
+            justify="left",
+            padx=10,
+            pady=10,
+        )
+        self.instructions.pack()
+
+        # Button to select input folder
+        self.folder_button = tk.Button(
+            root, text="Select Folder with Audio Files", command=self.select_folder
+        )
+        self.folder_button.pack(pady=10)
+
+        # Button to select SRT file
+        self.srt_button = tk.Button(
+            root, text="Select SRT File", command=self.select_srt
+        )
+        self.srt_button.pack(pady=10)
+
+        # Button to confirm diarization option
+        self.diarization_label = tk.Label(root, text="Diarization Option:")
+        self.diarization_label.pack(pady=5)
+
+        # Create a frame to hold the Yes and No buttons next to each other
+        self.diarization_frame = tk.Frame(root)
+        self.diarization_frame.pack(pady=5)
+
+        self.diarize_yes_button = tk.Button(
+            self.diarization_frame, text="Yes", command=lambda: self.set_diarize(True)
+        )
+        self.diarize_no_button = tk.Button(
+            self.diarization_frame, text="No", command=lambda: self.set_diarize(False)
+        )
+
+        # Pack both buttons to the left within the frame
+        self.diarize_yes_button.pack(side=tk.LEFT, padx=5)
+        self.diarize_no_button.pack(side=tk.LEFT, padx=5)
+
+        # Button to continue (initially disabled)
+        self.continue_button = tk.Button(
+            root, text="Continue", state="disabled", command=self.continue_process
+        )
+        self.continue_button.pack(pady=10)
+
+        # Result labels
+        self.result_label = tk.Label(root, text="", wraplength=450)
+        self.result_label.pack(pady=10)
+
+        # Store values for folder, SRT file, and diarization option
+        self.input_folder = ""
+        self.srt_file = ""
+        self.diarize = False
+
+    def select_folder(self):
+        self.input_folder = filedialog.askdirectory(
+            title="Select Folder with Audio Files"
+        )
+        if self.input_folder:
+            self.result_label.config(text=f"Selected folder: {self.input_folder}")
+            self.check_all_selections()
+
+    def select_srt(self):
+        self.srt_file = filedialog.askopenfilename(
+            title="Select SRT File", filetypes=[("SRT files", "*.srt")]
+        )
+        if self.srt_file:
+            self.result_label.config(text=f"Selected SRT file: {self.srt_file}")
+            self.check_all_selections()
+
+    def set_diarize(self, option):
+        self.diarize = option
+        self.result_label.config(
+            text=f"Diarization option: {'Yes' if self.diarize else 'No'}"
+        )
+        self.check_all_selections()
+
+    def check_all_selections(self):
+        if self.input_folder and self.srt_file and self.diarize is not None:
+            self.continue_button.config(state="normal")
+        else:
+            self.continue_button.config(state="disabled")
+
+    def continue_process(self):
+        self.root.destroy()
+
+    def get_selections(self):
+        return self.input_folder, self.srt_file, self.diarize
 
 
 def get_output_filename():
@@ -129,23 +231,29 @@ def process_files(input_folder, srt_file, diarize=False):
             extract_audio_with_srt(audio_file_path, srt_file, speaker_segments_dir)
 
 
-def main():
-    input_folder = None
-    srt_file = None
-    diarize = None
-    input_folder = select_input_folder()
-    srt_file = filedialog.askopenfilename(
-        title="Select SRT file", filetypes=[("SRT files", "*.srt")]
-    )
-    diarize = tk.messagebox.askyesno("Diarize", "Would you like to diarize the audio?")
+def GUI():
+    # Set up the main window
+    root = tk.Tk()
 
-    print(input_folder, srt_file, diarize)
+    # Create the FileChooserApp instance
+    app = FileChooserApp(root)
+
+    # Run the tkinter main loop
+    root.mainloop()
+
+    # After the GUI is closed, print the selections
+    input_folder, srt_file, diarize = app.get_selections()
     if input_folder == "" or srt_file == "":
-        tk.messagebox.showerror(
-            "Error", "Please select an input folder and SRT file to continue."
-        )
-        return
+        # tk.messagebox.showerror(
+        #     "Error", "Please select an input folder and SRT file to continue."
+        # )
+        exit()
+        # return None, None, None
+    return input_folder, srt_file, diarize
 
+
+def main():
+    input_folder, srt_file, diarize = GUI()
     print(input_folder, srt_file, diarize)
     process_files(input_folder, srt_file, diarize)
 
